@@ -25,6 +25,8 @@ VLA/
 │   └── dummy_env.py          # Dummy environment for testing
 ├── data/
 │   └── sample_data.json      # Sample training data
+├── VLM_finetune.ipynb        # Jupyter notebook for VLM fine-tuning
+├── output/                   # Output directory for checkpoints and model cards
 ├── requirements.txt          # Python dependencies
 └── README.md                 # This file
 ```
@@ -59,6 +61,8 @@ The VLA model consists of three main components:
 2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
+   # For VLM fine-tuning, also install:
+   pip install bitsandbytes peft trl transformers datasets
    ```
 
 ## 📊 Data Format
@@ -185,4 +189,23 @@ This project demonstrates the basic concepts of vision-language-action models. F
 - CLIP (Contrastive Language-Image Pre-training)
 - Vision Transformers
 - Large Language Models for instruction following
-- Reinforcement learning from human feedback (RLHF) 
+- Reinforcement learning from human feedback (RLHF)
+
+## 📝 Vision-Language Model Fine-Tuning (New!)
+
+A new Jupyter notebook, `VLM_finetune.ipynb`, demonstrates how to fine-tune a large vision-language model (Qwen/Qwen2-VL-7B-Instruct) using LoRA adapters and the TRL library. This notebook covers:
+
+- Loading and preparing datasets
+- Setting up the Qwen2-VL-7B-Instruct model with LoRA adapters
+- Training and evaluation using the TRL library
+- Saving checkpoints and model cards to the `output/` directory
+
+### Running the Notebook
+
+1. Install the additional dependencies (if not already installed):
+   ```bash
+   pip install bitsandbytes peft trl transformers datasets
+   ```
+2. Open `VLM_finetune.ipynb` in Jupyter and run the cells step by step.
+
+The notebook is self-contained and includes code for data formatting, model setup, training, and evaluation. Outputs and checkpoints will be saved in the `output/` directory. 
