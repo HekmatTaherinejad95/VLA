@@ -18,15 +18,18 @@ The VLA model is designed for applications where an agent needs to understand bo
 VLA/
 ├── models/
 │   ├── vla_model.py          # Main VLA model architecture
-│   └── trained_vla_model.pth # Pre-trained model weights
+│   └── trained_vla_model.pth # Trained model weights
 ├── scripts/
-│   ├── train.py              # Training script
+│   ├── train.py              # Training script (now uses real Flickr8k images)
 │   ├── run.py                # Inference script
-│   └── dummy_env.py          # Dummy environment for testing
+│   ├── preprocess_flickr8k.py # Preprocessing script for Flickr8k
+│   └── dummy_env.py          # Dummy environment (no longer used for real data)
 ├── data/
-│   └── sample_data.json      # Sample training data
-├── VLM_finetune.ipynb        # Jupyter notebook for VLM fine-tuning
-├── output/                   # Output directory for checkpoints and model cards
+│   ├── flickr8k/
+│   │   ├── Images/           # Flickr8k images
+│   │   ├── captions.txt      # Flickr8k captions
+│   │   └── flickr8k_data.json # Preprocessed data for training
+│   └── sample_data.json      # Sample data (legacy)
 ├── requirements.txt          # Python dependencies
 └── README.md                 # This file
 ```
@@ -48,7 +51,7 @@ The VLA model consists of three main components:
 3. **Fusion Network**: Combines vision and language features
    - Concatenates 256-dim vision + 256-dim language features
    - 2-layer MLP with ReLU activation
-   - Outputs action probabilities (10 action classes)
+   - Outputs action probabilities (10 action classes, currently mock labels)
 
 ## 🚀 Installation
 
@@ -61,43 +64,60 @@ The VLA model consists of three main components:
 2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
-   # For VLM fine-tuning, also install:
-   pip install bitsandbytes peft trl transformers datasets
+   pip install torchvision pillow
    ```
+
+## 📥 Dataset: Flickr8k
+
+This project now uses the [Flickr8k dataset](https://www.kaggle.com/datasets/adityajn105/flickr8k) for real vision-language training.
+
+### Downloading Flickr8k
+1. **Get your Kaggle API key** and place `kaggle.json` in `~/.kaggle/`.
+2. **Download and extract the dataset**:
+   ```bash
+   mkdir -p data/flickr8k
+   cd data/flickr8k
+   kaggle datasets download -d adityajn105/flickr8k
+   unzip -n flickr8k.zip
+   cd ../..
+   ```
+
+### Preprocessing Flickr8k
+Convert the captions to the project format:
+```bash
+python scripts/preprocess_flickr8k.py
+```
+This creates `data/flickr8k/flickr8k_data.json` for training.
 
 ## 📊 Data Format
 
-The training data should be in JSON format with the following structure:
-
+The training data is in JSON format:
 ```json
 [
     {
-        "image": "path/to/image1.png",
-        "instruction": "pick up the red block"
+        "image": "data/flickr8k/Images/1000268201_693b08cb0e.jpg",
+        "instruction": "A child in a pink dress is climbing up a set of stairs in an entry way ."
     },
-    {
-        "image": "path/to/image2.png", 
-        "instruction": "move the green cup to the left"
-    }
+    ...
 ]
 ```
 
 ## 🎯 Usage
 
-### Training the Model
+### Training the Model on Flickr8k
 
-To train the VLA model on your data:
+To train the VLA model on real Flickr8k data:
 
 ```bash
-cd scripts
-python train.py
+python scripts/train.py
 ```
 
 The training script will:
-- Load training data from `data/sample_data.json`
+- Load training data from `data/flickr8k/flickr8k_data.json`
+- Load and preprocess real images from disk
 - Build vocabulary from instructions
 - Initialize the VLA model
-- Train for 5 epochs using cross-entropy loss
+- Train for 5 epochs using cross-entropy loss (mock action labels)
 - Save the trained model to `models/trained_vla_model.pth`
 
 ### Running Inference
@@ -105,14 +125,13 @@ The training script will:
 To run inference with a trained model:
 
 ```bash
-cd scripts
-python run.py
+python scripts/run.py
 ```
 
 The inference script will:
 - Load the trained model
-- Process a sample instruction ("pick up the red block")
-- Generate and execute the predicted action
+- Process a sample instruction
+- Generate and output the predicted action
 
 ### Custom Usage
 
@@ -121,16 +140,20 @@ You can also use the model programmatically:
 ```python
 import torch
 from models.vla_model import VLAModel
+from PIL import Image
+import torchvision.transforms as transforms
 
 # Initialize model
 model = VLAModel(vocab_size=100, action_dim=10)
-
-# Load trained weights
 model.load_state_dict(torch.load('models/trained_vla_model.pth'))
 model.eval()
 
 # Prepare input
-image = torch.randn(1, 3, 64, 64)  # Batch of 1, 3 channels, 64x64
+transform = transforms.Compose([
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+])
+image = transform(Image.open('data/flickr8k/Images/1000268201_693b08cb0e.jpg').convert('RGB')).unsqueeze(0)
 instruction = torch.LongTensor([[0, 1, 2]])  # Tokenized instruction
 
 # Get action
@@ -142,31 +165,15 @@ with torch.no_grad():
 ## 🔧 Configuration
 
 Key parameters can be modified in the training script:
-
 - `NUM_EPOCHS`: Number of training epochs (default: 5)
 - `LEARNING_RATE`: Learning rate for Adam optimizer (default: 0.001)
 - `DATA_PATH`: Path to training data JSON file
 - `MODEL_SAVE_PATH`: Path to save trained model
 
-## 🎮 Environment Integration
-
-The project includes a `DummyEnv` class for testing purposes. In real applications, you would:
-
-1. Replace `DummyEnv` with your actual environment
-2. Implement proper observation and action spaces
-3. Add reward signals for reinforcement learning
-4. Handle environment reset and termination
-
 ## 📈 Model Performance
 
-The current implementation is a proof-of-concept with:
-- Random image generation for training
-- Mock action labels
-- Basic vocabulary building from training data
-
-For production use, you would need:
-- Real image data
-- Expert demonstrations or reinforcement learning
+The current implementation uses mock action labels (random integers). For production use, you would need:
+- Real action labels or expert demonstrations
 - Proper evaluation metrics
 - Hyperparameter tuning
 
@@ -185,7 +192,6 @@ For production use, you would need:
 ## 🙏 Acknowledgments
 
 This project demonstrates the basic concepts of vision-language-action models. For more advanced implementations, consider exploring:
-
 - CLIP (Contrastive Language-Image Pre-training)
 - Vision Transformers
 - Large Language Models for instruction following
