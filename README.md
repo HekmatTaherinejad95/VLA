@@ -67,6 +67,11 @@ The VLA model consists of three main components:
    pip install torchvision pillow
    ```
 
+3. **(Optional) For fine-tuning with the notebook**:
+   ```bash
+   pip install -r requirements-notebook.txt
+   ```
+
 ## 📥 Dataset: Flickr8k
 
 This project now uses the [Flickr8k dataset](https://www.kaggle.com/datasets/adityajn105/flickr8k) for real vision-language training.
@@ -210,7 +215,7 @@ A new Jupyter notebook, `VLM_finetune.ipynb`, demonstrates how to fine-tune a la
 
 1. Install the additional dependencies (if not already installed):
    ```bash
-   pip install bitsandbytes peft trl transformers datasets
+   pip install -r requirements-notebook.txt
    ```
 2. Open `VLM_finetune.ipynb` in Jupyter and run the cells step by step.
 

@@ -63,8 +63,11 @@ for epoch in range(NUM_EPOCHS):
         # --- Forward pass ---
         predicted_action = model(image_obs, instruction_tensor)
         
-        # --- Mock "correct" action ---
-        true_action = torch.LongTensor([np.random.randint(0, 10)])
+        # --- Use real action label or random if not present ---
+        if 'action' in item:
+            true_action = torch.LongTensor([item['action']])
+        else:
+            true_action = torch.LongTensor([np.random.randint(0, 10)])
 
         # --- Compute loss and backpropagate ---
         loss = criterion(predicted_action, true_action)
